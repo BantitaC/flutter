@@ -1,143 +1,197 @@
+// นำเข้า Material UI ของ Flutter (ปุ่ม, TextField, AppBar ฯลฯ)
 import 'package:flutter/material.dart';
 
+// ฟังก์ชัน main เป็นจุดเริ่มต้นของแอป
 void main() {
+  // runApp ใช้เปิดแอป และรับ Widget ตัวแรกเข้าไป
   runApp(const MyApp());
 }
 
+// MyApp เป็น Widget หลักของแอป
+// StatelessWidget = ไม่มีข้อมูลที่เปลี่ยนแปลง
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        scaffoldBackgroundColor: Colors.white,
-        primaryColor: Colors.black,
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Colors.white,
-          elevation: 0,
-          titleTextStyle: TextStyle(color: Colors.black, fontSize: 18, fontWeight: FontWeight.bold),
-        ),
-      ),
-      home: const TikTokProfilePage(),
+    // MaterialApp เป็นโครงหลักของแอปแบบ Material Design
+    return const MaterialApp(
+      debugShowCheckedModeBanner: false, // ซ่อนแถบ Debug มุมขวาบน
+      home: TodoPage(), // หน้าแรกของแอป คือ TodoPage
     );
   }
 }
 
-class TikTokProfilePage extends StatelessWidget {
-  const TikTokProfilePage({super.key});
+// TodoPage เป็นหน้า To-do list
+// ต้องใช้ StatefulWidget เพราะข้อมูลมีการเปลี่ยน (เพิ่ม/ลบ/แก้)
+class TodoPage extends StatefulWidget {
+  const TodoPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        leading: const Icon(Icons.arrow_back_ios, color: Colors.black),
-        centerTitle: true,
-        actions: const [
-           Icon(Icons.notifications_none_outlined, color: Colors.black),
-           SizedBox(width: 15),
-           Icon(Icons.share_outlined, color: Colors.black),
-           SizedBox(width: 15)
-        ],
-      ),
+  State<TodoPage> createState() => _TodoPageState();
+}
 
-      body: Column(
-        children: [
-          profileHeader(),
+// _TodoPageState คือคลาสที่เก็บ "สถานะ" ของ TodoPage
+class _TodoPageState extends State<TodoPage> {
 
-          const SizedBox(height: 10),
+  // List สำหรับเก็บรายการ To-do ทั้งหมด
+  List<String> todos = [];
 
-          const Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              Column(
-                children: [
-                  Icon(Icons.grid_on, color: Colors.black),
-                  SizedBox(height: 5),
-                  SizedBox(width: 40, height: 2, child: ColoredBox(color: Colors.black))
-                ],
-              ),
-              Icon(Icons.lock_outline, color: Colors.grey),
-              Icon(Icons.bookmark_border, color: Colors.grey),
-              Icon(Icons.favorite_border, color: Colors.grey),
-            ],
+  // controller ใช้ดึงข้อความจาก TextField
+  TextEditingController controller = TextEditingController();
+
+  // ------------------------
+  // ฟังก์ชันเพิ่ม To-do
+  // ------------------------
+  void addTodo() {
+    // เช็กว่ามีข้อความก่อนเพิ่ม
+    if (controller.text.isNotEmpty) {
+      setState(() {
+        // เพิ่มข้อความเข้าไปใน List
+        todos.add(controller.text);
+
+        // ล้างข้อความใน TextField
+        controller.clear();
+      });
+    }
+  }
+
+  // ------------------------
+  // ฟังก์ชันลบ To-do
+  // ------------------------
+  void deleteTodo(int index) {
+    setState(() {
+      // ลบรายการตามตำแหน่ง index
+      todos.removeAt(index);
+    });
+  }
+
+  // ------------------------
+  // ฟังก์ชันแก้ไข To-do
+  // ------------------------
+  void editTodo(int index) {
+    // สร้าง controller ใหม่สำหรับ Dialog
+    // ใส่ข้อความเดิมลงไปก่อน
+    TextEditingController editController = TextEditingController(
+      text: todos[index],
+    );
+
+    // showDialog ใช้เปิดหน้าต่าง Popup
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('แก้ไข To-do'),
+
+          // ช่องกรอกข้อความสำหรับแก้ไข
+          content: TextField(
+            controller: editController,
+            autofocus: true, // เปิด Dialog แล้วโฟกัสทันที
           ),
-          
-          const SizedBox(height: 2),
 
-          Row(
-            children: [
-              Expanded(child: Container(height: 150, color: Colors.grey[300])),
-              const SizedBox(width: 2),
-              Expanded(child: Container(height: 150, color: Colors.grey[300])),
-              const SizedBox(width: 2),
-              Expanded(child: Container(height: 150, color: Colors.grey[300])),
-            ],
-          ),
-        ],
-      ),
+          // ปุ่มด้านล่างของ Dialog
+          actions: [
+            // ปุ่มยกเลิก
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('ยกเลิก'),
+            ),
+
+            // ปุ่มบันทึก
+            TextButton(
+              onPressed: () {
+                setState(() {
+                  // เอาข้อความใหม่มาแทนของเดิม
+                  todos[index] = editController.text;
+                });
+
+                // ปิด Dialog
+                Navigator.pop(context);
+              },
+              child: const Text('บันทึก'),
+            ),
+          ],
+        );
+      },
     );
   }
 
-  Widget profileHeader() {
-    return Column(
-      children: [
-        Stack(
-          alignment: Alignment.bottomRight,
-          children: [
-            Container(
-              width: 100, height: 100,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.grey[300],
-              ),
+  // ------------------------
+  // ส่วนแสดงหน้าจอ
+  // ------------------------
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      // แถบด้านบนของแอป
+      appBar: AppBar(
+        title: const Text('To-do List'),
+      ),
+
+      // เนื้อหาหลักของหน้า
+      body: Column(
+        children: [
+
+          // ------------------------
+          // แถวเพิ่ม To-do
+          // ------------------------
+          Padding(
+            padding: const EdgeInsets.all(8.0), // เว้นขอบรอบ ๆ
+            child: Row(
+              children: [
+                // ช่องกรอกข้อความ
+                Expanded(
+                  child: TextField(
+                    controller: controller,
+                    decoration: const InputDecoration(
+                      hintText: 'เพิ่มงานที่ต้องทำ',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                ),
+
+                // ปุ่มเพิ่ม
+                IconButton(
+                  icon: const Icon(Icons.add),
+                  onPressed: addTodo,
+                ),
+              ],
             ),
-          ],
-        ),
-        
-        const SizedBox(height: 10),
-        const Text("titkokname", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-        const SizedBox(height: 8),
-        
-        // สถิติ
-        const Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Column(children: [Text("0", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)), Text("กำลังติดตาม", style: TextStyle(color: Colors.grey, fontSize: 12))]),
-            SizedBox(width: 20),
-            Column(children: [Text("0", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)), Text("ผู้ติดตาม", style: TextStyle(color: Colors.grey, fontSize: 12))]),
-            SizedBox(width: 20),
-            Column(children: [Text("0", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)), Text("ถูกใจ", style: TextStyle(color: Colors.grey, fontSize: 12))]),
-          ],
-        ),
-        
-        const SizedBox(height: 20),
+          ),
 
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 120, height: 40,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(color: Colors.pink, borderRadius: BorderRadius.circular(4)),
-              child: const Text("ติดตาม", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          // ------------------------
+          // แสดงรายการ To-do
+          // ------------------------
+          Expanded(
+            child: ListView.builder(
+              itemCount: todos.length, // จำนวนรายการ
+              itemBuilder: (context, index) {
+                return ListTile(
+                  // ข้อความ To-do
+                  title: Text(todos[index]),
+
+                  // ปุ่มด้านขวา (แก้ไข + ลบ)
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // ปุ่มแก้ไข
+                      IconButton(
+                        icon: const Icon(Icons.edit, color: Colors.blue),
+                        onPressed: () => editTodo(index),
+                      ),
+
+                      // ปุ่มลบ
+                      IconButton(
+                        icon: const Icon(Icons.delete, color: Colors.red),
+                        onPressed: () => deleteTodo(index),
+                      ),
+                    ],
+                  ),
+                );
+              },
             ),
-
-            const SizedBox(width: 8),
-
-            Container(
-              width: 100, height: 40,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(color: Colors.grey[200], borderRadius: BorderRadius.circular(4)),
-              child: const Text("ข้อความ", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
-            ),
-          ],
-        ),
-        // ------------------------------------------
-
-        const SizedBox(height: 10),
-      ],
+          ),
+        ],
+      ),
     );
   }
 }
